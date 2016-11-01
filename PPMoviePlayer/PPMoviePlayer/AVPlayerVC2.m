@@ -2,8 +2,8 @@
 //  AVPlayerVC2.m
 //  PPMoviePlayer
 //
-//  Created by cdmac on 16/10/26.
-//  Copyright © 2016年 chinadailyhk. All rights reserved.
+//  Created by xiaopin on 16/10/26.
+//  Copyright © 2016年 PPKit. All rights reserved.
 //
 
 #import "AVPlayerVC2.h"
@@ -14,7 +14,6 @@
 @interface AVPlayerVC2 ()<PPMoviePlayerViewDelegate>
 
 @property (nonatomic,strong) PPMoviePlayerView *moviePlayer;
-@property (nonatomic,assign) BOOL isLandscape;
 
 @end
 
@@ -24,6 +23,7 @@
     if(!_moviePlayer){
         _moviePlayer = [[PPMoviePlayerView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.width/1.776)];
         _moviePlayer.delegate = self;
+        _moviePlayer.showTopBarOnlyFullScreen = YES;
         _moviePlayer.controlStyle = PPMoviePlayerControlStyleNormal;
     }
     
@@ -136,7 +136,7 @@
  @param currentSencond <#currentSencond description#>
  */
 - (void)PPMoviePlayerView:(PPMoviePlayerView*)view timeChanged:(NSTimeInterval)currentSencond{
-    NSLog(@"%s",__FUNCTION__);
+    NSLog(@"%s-%f",__FUNCTION__,currentSencond);
 }
 
 
@@ -147,7 +147,16 @@
  @param status <#status description#>
  */
 - (void)PPMoviePlayerView:(PPMoviePlayerView*)view playStatusChanged:(PPMoviePlayerStatus)status{
-    NSLog(@"%s",__FUNCTION__);
+
+    if(status == PPMoviePlayerStatusPlaying){
+        NSLog(@"%s-正在播放中",__FUNCTION__);
+    }else if(status == PPMoviePlayerStatusPause){
+        NSLog(@"%s-暂停",__FUNCTION__);
+    }else if(status == PPMoviePlayerStatusStop){
+        NSLog(@"%s-停止",__FUNCTION__);
+    }else{
+        NSLog(@"%s-未知",__FUNCTION__);
+    }
 }
 
 

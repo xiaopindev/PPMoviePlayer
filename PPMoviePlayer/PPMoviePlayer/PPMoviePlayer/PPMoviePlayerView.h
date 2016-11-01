@@ -2,8 +2,12 @@
 //  PPMoviePlayerView.h
 //  PPMoviePlayer
 //
-//  Created by cdmac on 16/10/27.
-//  Copyright © 2016年 chinadailyhk. All rights reserved.
+//  Created by xiaopin on 16/10/27.
+//  Copyright © 2016年 PPKit. All rights reserved.
+//
+//  My Blog: http://xiaopin.cnblogs.com
+//  Git Hub: https://github.com/xiaopn166
+//  QQ交流群：168368234
 //
 
 #import <UIKit/UIKit.h>
@@ -39,6 +43,11 @@ typedef enum : NSUInteger {
  视频本地或网络播放路径
  */
 @property (nonatomic,strong) NSURL *videoUrl;
+
+/**
+ 只在全屏的时候显示顶部工具栏
+ */
+@property (nonatomic,assign) BOOL showTopBarOnlyFullScreen;
 
 /**
  全屏状态

@@ -2,8 +2,8 @@
 //  PPMoviePlayerView.m
 //  PPMoviePlayer
 //
-//  Created by cdmac on 16/10/27.
-//  Copyright © 2016年 chinadailyhk. All rights reserved.
+//  Created by xiaopin on 16/10/27.
+//  Copyright © 2016年 PPKit. All rights reserved.
 //
 
 #import "PPMoviePlayerView.h"
@@ -35,6 +35,8 @@
 @property (nonatomic,assign) BOOL controlHidden;
 @property (nonatomic,strong) NSTimer *controlTimer;
 
+@property (nonatomic,assign) BOOL isSliding;
+
 //顶部视频信息视图
 @property (nonatomic,strong) UIView *topView;
 @property (nonatomic,strong) UIButton *btnBack;
@@ -56,8 +58,8 @@
 @property (nonatomic,strong) UIButton *btnPlayOrPause;
 @property (nonatomic,strong) UIButton *btnNextVideo;
 @property (nonatomic,strong) UILabel *labStartTime;
-@property (nonatomic,strong) UISlider *playSlider;
-@property (nonatomic,strong) UIProgressView *playProgress;
+@property (nonatomic,strong) UISlider *playProgress;
+@property (nonatomic,strong) UIProgressView *loadedProgress;
 @property (nonatomic,strong) UILabel *labEndTime;
 @property (nonatomic,strong) UIButton *btnQuality;
 @property (nonatomic,strong) UIButton *btnVideoList;
@@ -206,7 +208,7 @@
 -(UIButton *)btnPlayOrPause{
     if(!_btnPlayOrPause){
         _btnPlayOrPause = [UIButton buttonWithType:UIButtonTypeCustom];
-        _btnPlayOrPause.frame = CGRectMake(0, 5, 30, 30);
+        _btnPlayOrPause.frame = CGRectMake(5, 5, 30, 30);
         [_btnPlayOrPause setImage:[UIImage imageNamed:@"PPKit_vp_play"] forState:UIControlStateNormal];
         [_btnPlayOrPause addTarget:self action:@selector(playOrPauseAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -225,34 +227,48 @@
 
 -(UILabel *)labStartTime{
     if(!_labStartTime){
-        _labStartTime = [[UILabel alloc] initWithFrame:CGRectMake(0, 5, 80, 30)];
+        _labStartTime = [[UILabel alloc] initWithFrame:CGRectMake(0, 5, 40, 30)];
         _labStartTime.textAlignment = NSTextAlignmentCenter;
         _labStartTime.textColor = [UIColor whiteColor];
         _labStartTime.font = [UIFont systemFontOfSize:12];
+        _labStartTime.text = @"00:00";
     }
     return _labStartTime;
 }
 
--(UISlider *)playSlider{
-    if(!_playSlider){
-        _playSlider = [[UISlider alloc] initWithFrame:CGRectMake(0, 5, 0, 30)];
-    }
-    return _playSlider;
-}
-
-- (UIProgressView *)playProgress{
+-(UISlider *)playProgress{
     if(!_playProgress){
-        _playProgress = [[UIProgressView alloc] initWithFrame:CGRectMake(0, 5, 0, 30)];
+        _playProgress = [[UISlider alloc] initWithFrame:CGRectMake(0, 5, 0, 30)];
+        _playProgress.value = 0.0;
+        _playProgress.maximumTrackTintColor = [UIColor clearColor];
+        //设置播放进度颜色
+        //_playProgress.minimumTrackTintColor = [UIColor orangeColor];
+        [_playProgress setThumbImage:[UIImage imageNamed:@"PPKit_vp_slider"] forState:UIControlStateNormal];
+        
+        [_playProgress addTarget:self action:@selector(playerSliderTouchDown:) forControlEvents:UIControlEventTouchDown];
+        [_playProgress addTarget:self action:@selector(playerSliderTouchUpInside:) forControlEvents:UIControlEventTouchUpInside];
+        [_playProgress addTarget:self action:@selector(playerSliderValueChanged:) forControlEvents:UIControlEventValueChanged];
     }
     return _playProgress;
 }
 
+- (UIProgressView *)loadedProgress{
+    if(!_loadedProgress){
+        _loadedProgress = [[UIProgressView alloc] initWithFrame:CGRectMake(0, 5, 0, 30)];
+        //_loadedProgress.progress = 0.5;
+        //设置已经缓存进度
+        _loadedProgress.progressTintColor = [UIColor orangeColor];
+    }
+    return _loadedProgress;
+}
+
 -(UILabel *)labEndTime{
     if(!_labEndTime){
-        _labEndTime = [[UILabel alloc] initWithFrame:CGRectMake(0, 5, 80, 30)];
+        _labEndTime = [[UILabel alloc] initWithFrame:CGRectMake(0, 5, 40, 30)];
         _labEndTime.textAlignment = NSTextAlignmentCenter;
         _labEndTime.textColor = [UIColor whiteColor];
         _labEndTime.font = [UIFont systemFontOfSize:12];
+        _labEndTime.text = @"00:00";
     }
     return _labEndTime;
 }
@@ -264,9 +280,10 @@
         _btnQuality.backgroundColor = [UIColor grayColor];
         _btnQuality.titleLabel.font = [UIFont systemFontOfSize:12];
         [_btnQuality setTitle:@"标准" forState:UIControlStateNormal];
+        [_btnQuality setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         [_btnQuality addTarget:self action:@selector(qualityAction) forControlEvents:UIControlEventTouchUpInside];
     }
-    return _btnVideoList;
+    return _btnQuality;
 }
 
 -(UIButton *)btnVideoList{
@@ -274,7 +291,7 @@
         _btnVideoList = [UIButton buttonWithType:UIButtonTypeCustom];
         _btnVideoList.frame = CGRectMake(0, 5, 50, 30);
         [_btnVideoList setImage:[UIImage imageNamed:@"PPKit_vp_list"] forState:UIControlStateNormal];
-        [_btnVideoList addTarget:self action:@selector(fullScreenAction) forControlEvents:UIControlEventTouchUpInside];
+        [_btnVideoList addTarget:self action:@selector(videoListAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnVideoList;
 }
@@ -384,27 +401,117 @@
     
     if(controlStyle == PPMoviePlayerControlStyleNormal){
         //正常布局
-        [self.topView addSubview:self.btnBack];
-        [self.topView addSubview:self.labTitle];
-        [self.topView addSubview:self.btnMore];
+        if(!self.showTopBarOnlyFullScreen){
+            //如果不是全屏就不显示
+            pX = self.btnBack.frame.origin.x + self.btnBack.frame.size.width + 5;
+            pWidth = self.bounds.size.width - pX - (self.bounds.size.width - self.btnMore.frame.origin.x);
+            self.labTitle.frame = CGRectMake(pX, 5, pWidth, 30);
+            
+            [self.topView addSubview:self.btnBack];
+            [self.topView addSubview:self.labTitle];
+            [self.topView addSubview:self.btnMore];
+            [self addSubview:self.topView];
+        }
+    
+        CGFloat tmpX;
+        pX = self.btnPlayOrPause.frame.origin.x + self.btnPlayOrPause.frame.size.width + 5;
+        self.labStartTime.frame = CGRectMake(pX, 5, 40, 30);
+        pWidth = pX + 40 + 3;
+        tmpX = pWidth;
+        pX = self.bounds.size.width - 40 - 3;
+        self.labEndTime.frame = CGRectMake(pX, 5, 40, 30);
+    
+        //算出进度条的动态宽
+        pWidth = pX - pWidth;
+        self.playProgress.frame = CGRectMake(tmpX, 10, pWidth, 20);
+        self.loadedProgress.frame = CGRectMake(tmpX+2, 19, pWidth-4, 20);
         
-        pX = self.btnBack.frame.origin.x + self.btnBack.frame.size.width + 5;
-        pWidth = self.bounds.size.width - pX - (self.bounds.size.width - self.btnMore.frame.origin.x);
-        self.labTitle.frame = CGRectMake(pX, 5, pWidth, 30);
-        
-        [self addSubview:self.topView];
-        
+        [self.bottomView addSubview:self.btnPlayOrPause];
+        [self.bottomView addSubview:self.labStartTime];
+        [self.bottomView addSubview:self.loadedProgress];
+        [self.bottomView addSubview:self.playProgress];
+        [self.bottomView addSubview:self.labEndTime];
         [self addSubview:self.bottomView];
         
     } else if (controlStyle == PPMoviePlayerControlStyleFullScreen){
         //全屏布局
-        [self.topView addSubview:self.btnBack];
-//        self.topView addSubview:<#(nonnull UIView *)#>
         
+        //TopBar布局
+        pX = self.bounds.size.width - (30*1) - (5*1) - 5;
+        self.btnDownload.frame = CGRectMake(pX, 5, 30, 30);
+        pX = self.bounds.size.width - (30*2) - (5*2) - 5;
+        self.btnFavorite.frame = CGRectMake(pX, 5, 30, 30);
+        pX = self.bounds.size.width - (30*3) - (5*3) - 5;
+        self.btnShare.frame = CGRectMake(pX, 5, 30, 30);
+        pX = self.bounds.size.width - (30*4) - (5*4) - 5;
+        self.btnToTV.frame = CGRectMake(pX, 5, 30, 30);
+        
+        pWidth = pX -5;
+        pX = self.btnBack.frame.origin.x + self.btnBack.frame.size.width + 5;
+        pWidth = pWidth - pX;
+        self.labTitle.frame = CGRectMake(pX, 5, pWidth, 30);
+        
+        [self.topView addSubview:self.btnBack];
+        [self.topView addSubview:self.labTitle];
+        [self.topView addSubview:self.btnToTV];
+        [self.topView addSubview:self.btnShare];
+        [self.topView addSubview:self.btnFavorite];
+        [self.topView addSubview:self.btnDownload];
         [self addSubview:self.topView];
+        
+        //BottomBar布局
+        CGFloat tmpX;
+        pX = self.btnPlayOrPause.frame.origin.x + self.btnPlayOrPause.frame.size.width + 5;
+        self.btnNextVideo.frame = CGRectMake(pX, 5, 30, 30);
+        pX = self.btnNextVideo.frame.origin.x + self.btnNextVideo.frame.size.width + 5;
+        self.labStartTime.frame = CGRectMake(pX, 5, 40, 30);
+        pWidth = pX + 40 + 3;
+        tmpX = pWidth;
+        
+        pX = self.bounds.size.width - 30 - 5;
+        self.btnFullScreen.frame = CGRectMake(pX, 5, 30, 30);
+        pX = pX - 40 - 5;
+        self.btnVideoList.frame = CGRectMake(pX, 5, 40, 30);
+        pX = pX - 40 - 5;
+        self.btnQuality.frame = CGRectMake(pX, 5, 40, 30);
+        pX = pX - 40 - 3;
+        self.labEndTime.frame = CGRectMake(pX, 5, 40, 30);
+        
+        //算出进度条的动态宽
+        pWidth = pX - pWidth;
+        self.playProgress.frame = CGRectMake(tmpX, 10, pWidth, 20);
+        self.loadedProgress.frame = CGRectMake(tmpX+2, 19, pWidth-4, 20);
+        
+        [self.bottomView addSubview:self.btnPlayOrPause];
+        [self.bottomView addSubview:self.btnNextVideo];
+        [self.bottomView addSubview:self.labStartTime];
+        [self.bottomView addSubview:self.loadedProgress];
+        [self.bottomView addSubview:self.playProgress];
+        [self.bottomView addSubview:self.labEndTime];
+        [self.bottomView addSubview:self.btnQuality];
+        [self.bottomView addSubview:self.btnVideoList];
+        [self.bottomView addSubview:self.btnFullScreen];
         
         [self addSubview:self.bottomView];
     }
+    
+//    self.labStartTime.backgroundColor = [UIColor redColor];
+//    self.labEndTime.backgroundColor = [UIColor redColor];
+//    self.btnFullScreen.backgroundColor = [UIColor redColor];
+//    self.btnVideoList.backgroundColor = [UIColor greenColor];
+//    self.btnQuality.backgroundColor = [UIColor blueColor];
+//    
+//    self.btnPlayOrPause.backgroundColor = [UIColor redColor];
+//    self.btnNextVideo.backgroundColor = [UIColor greenColor];
+//    
+//    self.btnToTV.backgroundColor = [UIColor redColor];
+//    self.btnShare.backgroundColor = [UIColor greenColor];
+//    self.btnFavorite.backgroundColor = [UIColor blueColor];
+//    self.btnDownload.backgroundColor = [UIColor redColor];
+//    
+//    self.labTitle.backgroundColor = [UIColor orangeColor];
+//    
+//    self.btnBack.backgroundColor =[UIColor redColor];
 }
 
 - (void)dealloc{
@@ -481,6 +588,13 @@
         //移除重播视图
         [self.btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_play2"] forState:UIControlStateNormal];
         [self.btnReplay removeFromSuperview];
+        
+        //设置播放按钮状态
+        [self.btnPlayOrPause setImage:[UIImage imageNamed:@"PPKit_vp_pause"] forState:UIControlStateNormal];
+        
+        if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:playStatusChanged:)]){
+            [self.delegate PPMoviePlayerView:self playStatusChanged:PPMoviePlayerStatusPlaying];
+        }
     }
 }
 
@@ -505,11 +619,22 @@
         _status = PPMoviePlayerStatusPause;
         
         [self addSubview:self.btnReplay];
+        
+        //设置播放按钮状态
+        [self.btnPlayOrPause setImage:[UIImage imageNamed:@"PPKit_vp_play"] forState:UIControlStateNormal];
+        
+        if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:playStatusChanged:)]){
+            [self.delegate PPMoviePlayerView:self playStatusChanged:PPMoviePlayerStatusPause];
+        }
     }
 }
 
 - (void)stop{
     [self removeNotifyObservers];
+    
+    if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:playStatusChanged:)]){
+        [self.delegate PPMoviePlayerView:self playStatusChanged:PPMoviePlayerStatusStop];
+    }
 }
 
 //检测播放状态
@@ -595,6 +720,21 @@
         [self.controlTimer invalidate];
         self.controlTimer = nil;
     }
+}
+
+- (NSString *)convertTime:(CGFloat)second {
+    // 相对格林时间
+    NSDate *date = [NSDate dateWithTimeIntervalSince1970:second];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    
+    if (second / 3600 >= 1) {
+        [formatter setDateFormat:@"HH:mm:ss"];
+    } else {
+        [formatter setDateFormat:@"mm:ss"];
+    }
+    
+    NSString *showTimeNew = [formatter stringFromDate:date];
+    return showTimeNew;
 }
 
 #pragma mark - 触摸事件
@@ -733,6 +873,11 @@
 
 //暂停或播放点击
 - (void)playOrPauseAction{
+    if(self.status == PPMoviePlayerStatusPlaying){
+        [self pause];
+    }else{
+        [self play];
+    }
 
     if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:playOrPauseAction:)]){
         [self.delegate PPMoviePlayerView:self playOrPauseAction:nil];
@@ -769,6 +914,27 @@
     if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:fullScreenAction:)]){
         [self.delegate PPMoviePlayerView:self fullScreenAction:nil];
     }
+}
+
+#pragma mark - Slider事件
+- (void)playerSliderTouchDown:(id)sender {
+    [self pause];
+}
+
+- (void)playerSliderTouchUpInside:(id)sender {
+    _isSliding = NO; // 滑动结束
+    [self play];
+}
+
+- (void)playerSliderValueChanged:(id)sender {
+    _isSliding = YES;
+    
+    [self pause];
+    
+    CMTime changedTime = CMTimeMakeWithSeconds(self.playProgress.value, 1.0);
+    [self.playerItem seekToTime:changedTime completionHandler:^(BOOL finished) {
+        // 跳转完成后做某事
+    }];
 }
 
 #pragma mark - 监听事件
@@ -833,7 +999,19 @@
         
         //NSLog(@"当前播放进度：%f/%f",currentSecond,totalSecond);
         
+        // 更新slider, 如果正在滑动则不更新
+        if (_isSliding == NO) {
+            weakSelf.playProgress.value = currentSecond;
+            weakSelf.labStartTime.text = [weakSelf convertTime:currentSecond];
+        }
         
+        if(weakSelf.delegate && [weakSelf respondsToSelector:@selector(PPMoviePlayerView:timeChanged:)]){
+            [weakSelf.delegate PPMoviePlayerView:weakSelf timeChanged:currentSecond];
+        }
+        
+        if(self.delegate && [weakSelf.delegate respondsToSelector:@selector(PPMoviePlayerView:playStatusChanged:)]){
+            [weakSelf.delegate PPMoviePlayerView:weakSelf playStatusChanged:PPMoviePlayerStatusPlaying];
+        }
     }];
 
     // 监听准备播放状态属性
@@ -893,6 +1071,10 @@
     //2.显示重播按钮
     [self.btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_replay"] forState:UIControlStateNormal];
     [self addSubview:self.btnReplay];
+    
+    if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:playStatusChanged:)]){
+        [self.delegate PPMoviePlayerView:self playStatusChanged:PPMoviePlayerStatusStop];
+    }
 }
 
 - (void)playbackFailed:(NSNotification *)notification{
@@ -919,6 +1101,8 @@
             NSLog(@"AVPlayerItemStatusReadyToPlay");
             //1.获取视频长度
             self.duration = item.duration;
+            self.playProgress.maximumValue = CMTimeGetSeconds(item.duration);
+            self.labEndTime.text = [self convertTime:CMTimeGetSeconds(item.duration)];
             
             //2. 视频播放
             [self.player play];
@@ -945,9 +1129,9 @@
         float durationSeconds = CMTimeGetSeconds(timeRange.duration);
         
         float loadedDuration = startSeconds + durationSeconds;                      // 计算缓冲总进度
-        NSLog(@"当前缓存进度：%f",loadedDuration);
+        //NSLog(@"当前缓存进度：%f",loadedDuration);
         
-        //[self.loadedProgress setProgress:timeInterval / totalDuration animated:YES]; // 更新缓冲条
+        [self.loadedProgress setProgress:loadedDuration / CMTimeGetSeconds(self.duration) animated:YES]; // 更新缓冲条
     }else if ([keyPath isEqualToString:PlayerItemKey_PlaybackBufferEmpty]) {
         // 监听播放的区域缓存是否为空
         

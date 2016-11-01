@@ -2,8 +2,8 @@
 //  AVPlayerVC1.m
 //  PPMoviePlayer
 //
-//  Created by cdmac on 16/10/26.
-//  Copyright © 2016年 chinadailyhk. All rights reserved.
+//  Created by xiaopin on 16/10/26.
+//  Copyright © 2016年 PPKit. All rights reserved.
 //
 
 #import "AVPlayerVC1.h"
@@ -50,10 +50,11 @@
     //    NSURL *movieUrl = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"music1" ofType:@"mp3"]];
     
     // 加载本地视频
-    //    NSURL *movieUrl = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"video1" ofType:@"mp4"]];
+    NSURL *movieUrl = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"cdvideo" ofType:@"mp4"]];
+    
     
     // 加载网络视频
-    NSURL *movieUrl = [NSURL URLWithString:@"http://w2.dwstatic.com/1/5/1525/127352-100-1434554639.mp4"];
+    //NSURL *movieUrl = [NSURL URLWithString:@"http://w2.dwstatic.com/1/5/1525/127352-100-1434554639.mp4"];
     
     // 创建播放控制器
     self.player = [AVPlayer playerWithURL:movieUrl];
