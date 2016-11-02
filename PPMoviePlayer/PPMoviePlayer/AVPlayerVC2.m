@@ -159,6 +159,25 @@
     }
 }
 
+/**
+ 播放屏幕单击
+ 
+ @param view   <#view description#>
+ @param sender <#sender description#>
+ */
+- (void)PPMoviePlayerView:(PPMoviePlayerView*)view screenTap:(id)sender{
+    NSLog(@"%s",__FUNCTION__);
+}
+
+/**
+ 播放屏幕双击
+ 
+ @param view   <#view description#>
+ @param sender <#sender description#>
+ */
+- (void)PPMoviePlayerView:(PPMoviePlayerView*)view screenDoubleTap:(id)sender{
+    NSLog(@"%s",__FUNCTION__);
+}
 
 /**
  返回按钮点击

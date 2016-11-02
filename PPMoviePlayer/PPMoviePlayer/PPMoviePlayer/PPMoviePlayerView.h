@@ -114,6 +114,23 @@ typedef enum : NSUInteger {
  */
 - (void)PPMoviePlayerView:(PPMoviePlayerView*)view playStatusChanged:(PPMoviePlayerStatus)status;
 
+
+/**
+ 播放屏幕单击
+ 
+ @param view   <#view description#>
+ @param sender <#sender description#>
+ */
+- (void)PPMoviePlayerView:(PPMoviePlayerView*)view screenTap:(id)sender;
+
+/**
+ 播放屏幕双击
+ 
+ @param view   <#view description#>
+ @param sender <#sender description#>
+ */
+- (void)PPMoviePlayerView:(PPMoviePlayerView*)view screenDoubleTap:(id)sender;
+
 /**
  返回按钮点击
  

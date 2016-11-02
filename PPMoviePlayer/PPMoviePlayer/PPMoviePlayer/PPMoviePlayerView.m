@@ -766,12 +766,20 @@
         //开启定时器
         [self startControlTimer];
     }
+    
+    if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:screenTap:)]){
+        [self.delegate PPMoviePlayerView:self screenTap:nil];
+    }
 }
 
 //2.双点暂停
 - (void)doubleTap{
     NSLog(@"%s",__FUNCTION__);
     [self pause];
+    
+    if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:screenDoubleTap:)]){
+        [self.delegate PPMoviePlayerView:self screenDoubleTap:nil];
+    }
 }
 
 //3.左边上下滑动调亮度
@@ -1005,11 +1013,11 @@
             weakSelf.labStartTime.text = [weakSelf convertTime:currentSecond];
         }
         
-        if(weakSelf.delegate && [weakSelf respondsToSelector:@selector(PPMoviePlayerView:timeChanged:)]){
+        if(weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(PPMoviePlayerView:timeChanged:)]){
             [weakSelf.delegate PPMoviePlayerView:weakSelf timeChanged:currentSecond];
         }
         
-        if(self.delegate && [weakSelf.delegate respondsToSelector:@selector(PPMoviePlayerView:playStatusChanged:)]){
+        if(weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(PPMoviePlayerView:playStatusChanged:)]){
             [weakSelf.delegate PPMoviePlayerView:weakSelf playStatusChanged:PPMoviePlayerStatusPlaying];
         }
     }];
