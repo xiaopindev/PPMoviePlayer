@@ -1086,7 +1086,9 @@
 }
 
 - (void)playbackFailed:(NSNotification *)notification{
-    
+    if(self.delegate && [self.delegate respondsToSelector:@selector(PPMoviePlayerView:playFailed:)]){
+        [self.delegate PPMoviePlayerView:self playFailed:nil];
+    }
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath

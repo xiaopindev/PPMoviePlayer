@@ -114,6 +114,13 @@ typedef enum : NSUInteger {
  */
 - (void)PPMoviePlayerView:(PPMoviePlayerView*)view playStatusChanged:(PPMoviePlayerStatus)status;
 
+/**
+ 播放失败
+
+ @param view   <#view description#>
+ @param sender <#sender description#>
+ */
+- (void)PPMoviePlayerView:(PPMoviePlayerView*)view playFailed:(id)sender;
 
 /**
  播放屏幕单击
