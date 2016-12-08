@@ -125,7 +125,7 @@
     if(!_btnFavorite){
         _btnFavorite = [UIButton buttonWithType:UIButtonTypeCustom];
         _btnFavorite.frame = CGRectMake(0, 5, 30, 30);
-        [_btnFavorite setImage:[UIImage imageNamed:@"PPKit_vp_favorite"] forState:UIControlStateNormal];
+        [_btnFavorite setImage:[UIImage imageNamed:@"PPKit_vp_favorite_empty"] forState:UIControlStateNormal];
         [_btnFavorite addTarget:self action:@selector(favoriteAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnFavorite;
@@ -155,11 +155,11 @@
 #pragma mark - ---中
 -(UIButton *)btnReplay{
     if(!_btnReplay){
-        pX = (self.bounds.size.width - 50)/2;
+        pX = (self.bounds.size.width - 55)/2;
         pY = (self.bounds.size.height - 50)/2;
         _btnReplay = [UIButton buttonWithType:UIButtonTypeCustom];
-        _btnReplay.frame = CGRectMake(pX, pY, 50, 50);
-        [_btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_play2"] forState:UIControlStateNormal];
+        _btnReplay.frame = CGRectMake(pX, pY, 55, 50);
+        [_btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_play_big"] forState:UIControlStateNormal];
         [_btnReplay addTarget:self action:@selector(play) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnReplay;
@@ -242,7 +242,7 @@
         _playProgress.value = 0.0;
         _playProgress.maximumTrackTintColor = [UIColor clearColor];
         //设置播放进度颜色
-        //_playProgress.minimumTrackTintColor = [UIColor orangeColor];
+        _playProgress.minimumTrackTintColor = [UIColor orangeColor];
         [_playProgress setThumbImage:[UIImage imageNamed:@"PPKit_vp_slider"] forState:UIControlStateNormal];
         
         [_playProgress addTarget:self action:@selector(playerSliderTouchDown:) forControlEvents:UIControlEventTouchDown];
@@ -256,8 +256,8 @@
     if(!_loadedProgress){
         _loadedProgress = [[UIProgressView alloc] initWithFrame:CGRectMake(0, 5, 0, 30)];
         //_loadedProgress.progress = 0.5;
-        //设置已经缓存进度
-        _loadedProgress.progressTintColor = [UIColor orangeColor];
+        //设置已经缓存进度颜色
+        _loadedProgress.progressTintColor = [UIColor whiteColor];
     }
     return _loadedProgress;
 }
@@ -329,17 +329,18 @@
 
 //设置视频播放URL
 -(void)setVideoUrl:(NSURL *)videoUrl{
-    _videoUrl = videoUrl;
-    
-    //1.移除监听
-    [self removeNotifyObservers];
-    
-    //2.初始化播放器
-    [self initAVPlayerWithUrl:videoUrl];
-    
-    //3.添加监听
-    [self addNotifyObservers];
-
+    if(videoUrl){
+        _videoUrl = videoUrl;
+        
+        //1.移除监听
+        [self removeNotifyObservers];
+        
+        //2.初始化播放器
+        [self initAVPlayerWithUrl:videoUrl];
+        
+        //3.添加监听
+        [self addNotifyObservers];
+    }
 }
 
 //设置全屏
@@ -351,9 +352,9 @@
     
     //2.设置重播按钮垂直居中
     if(_btnReplay){
-        pX = (self.bounds.size.width - 50)/2;
+        pX = (self.bounds.size.width - 55)/2;
         pY = (self.bounds.size.height - 50)/2;
-        self.btnReplay.frame = CGRectMake(pX, pY, 50, 50);
+        self.btnReplay.frame = CGRectMake(pX, pY, 55, 50);
     }
     
     //3.把提示信息居中
@@ -401,19 +402,20 @@
     
     if(controlStyle == PPMoviePlayerControlStyleNormal){
         //正常布局
+        CGFloat tmpX;
+        tmpX = self.btnBack.frame.origin.x + self.btnBack.frame.size.width + 5;
+        pWidth = self.bounds.size.width - tmpX - (self.bounds.size.width - self.btnMore.frame.origin.x);
+        self.labTitle.frame = CGRectMake(tmpX, 5, pWidth, 30);
+        
+        [self.topView addSubview:self.btnBack];
+        [self.topView addSubview:self.labTitle];
+        [self.topView addSubview:self.btnMore];
+        
         if(!self.showTopBarOnlyFullScreen){
             //如果不是全屏就不显示
-            pX = self.btnBack.frame.origin.x + self.btnBack.frame.size.width + 5;
-            pWidth = self.bounds.size.width - pX - (self.bounds.size.width - self.btnMore.frame.origin.x);
-            self.labTitle.frame = CGRectMake(pX, 5, pWidth, 30);
-            
-            [self.topView addSubview:self.btnBack];
-            [self.topView addSubview:self.labTitle];
-            [self.topView addSubview:self.btnMore];
             [self addSubview:self.topView];
         }
-    
-        CGFloat tmpX;
+        
         pX = self.btnPlayOrPause.frame.origin.x + self.btnPlayOrPause.frame.size.width + 5;
         self.labStartTime.frame = CGRectMake(pX, 5, 40, 30);
         pWidth = pX + 40 + 3;
@@ -468,6 +470,7 @@
         pWidth = pX + 40 + 3;
         tmpX = pWidth;
         
+        //pX = self.bounds.size.width - 40 - 5;
         pX = self.bounds.size.width - 30 - 5;
         self.btnFullScreen.frame = CGRectMake(pX, 5, 30, 30);
         pX = pX - 40 - 5;
@@ -494,24 +497,23 @@
         
         [self addSubview:self.bottomView];
     }
-    
+    //测试
+//    self.btnBack.backgroundColor =[UIColor redColor];
+//    self.labTitle.backgroundColor = [UIColor orangeColor];
+//    self.btnToTV.backgroundColor = [UIColor redColor];
+//    self.btnShare.backgroundColor = [UIColor greenColor];
+//    self.btnFavorite.backgroundColor = [UIColor blueColor];
+//    self.btnDownload.backgroundColor = [UIColor redColor];
+//    self.btnMore.backgroundColor = [UIColor greenColor];
+
+//    self.btnPlayOrPause.backgroundColor = [UIColor redColor];
+//    self.btnNextVideo.backgroundColor = [UIColor greenColor];
+//    
 //    self.labStartTime.backgroundColor = [UIColor redColor];
 //    self.labEndTime.backgroundColor = [UIColor redColor];
 //    self.btnFullScreen.backgroundColor = [UIColor redColor];
 //    self.btnVideoList.backgroundColor = [UIColor greenColor];
 //    self.btnQuality.backgroundColor = [UIColor blueColor];
-//    
-//    self.btnPlayOrPause.backgroundColor = [UIColor redColor];
-//    self.btnNextVideo.backgroundColor = [UIColor greenColor];
-//    
-//    self.btnToTV.backgroundColor = [UIColor redColor];
-//    self.btnShare.backgroundColor = [UIColor greenColor];
-//    self.btnFavorite.backgroundColor = [UIColor blueColor];
-//    self.btnDownload.backgroundColor = [UIColor redColor];
-//    
-//    self.labTitle.backgroundColor = [UIColor orangeColor];
-//    
-//    self.btnBack.backgroundColor =[UIColor redColor];
 }
 
 - (void)dealloc{
@@ -586,7 +588,7 @@
         _status = PPMoviePlayerStatusPlaying;
         
         //移除重播视图
-        [self.btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_play2"] forState:UIControlStateNormal];
+        [self.btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_play_big"] forState:UIControlStateNormal];
         [self.btnReplay removeFromSuperview];
         
         //设置播放按钮状态
@@ -606,7 +608,7 @@
         [self.player seekToTime:CMTimeMake(timeInterval, 1) completionHandler:^(BOOL finished) {
             
             //移除播放按钮
-            [self.btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_play2"] forState:UIControlStateNormal];
+            [self.btnReplay setImage:[UIImage imageNamed:@"PPKit_vp_play_big"] forState:UIControlStateNormal];
             [self.btnReplay removeFromSuperview];
         }];
     }
@@ -701,17 +703,30 @@
 - (void)startControlTimer{
     [self clearControlTimer];
     
-    __weak typeof(self) weakSelf = self;
-    self.controlTimer = [NSTimer scheduledTimerWithTimeInterval:12.0f repeats:NO block:^(NSTimer * _Nonnull timer) {
-        //隐藏控制视图
-        [UIView animateWithDuration:0.3 animations:^{
-            weakSelf.topView.alpha = 0;
-            weakSelf.bottomView.alpha = 0;
-        }];
-        
-        //销毁定时器
-        [weakSelf clearControlTimer];
+    self.controlTimer = [NSTimer scheduledTimerWithTimeInterval:12.0f target:self selector:@selector(controlTimerGo) userInfo:nil repeats:NO];
+      //iOS10写法
+//    __weak typeof(self) weakSelf = self;
+//    self.controlTimer = [NSTimer scheduledTimerWithTimeInterval:12.0f repeats:NO block:^(NSTimer * _Nonnull timer) {
+//        //隐藏控制视图
+//        [UIView animateWithDuration:0.3 animations:^{
+//            weakSelf.topView.alpha = 0;
+//            weakSelf.bottomView.alpha = 0;
+//        }];
+//        
+//        //销毁定时器
+//        [weakSelf clearControlTimer];
+//    }];
+}
+
+- (void)controlTimerGo{
+    //隐藏控制视图
+    [UIView animateWithDuration:0.3 animations:^{
+        self.topView.alpha = 0;
+        self.bottomView.alpha = 0;
     }];
+    
+    //销毁定时器
+    [self clearControlTimer];
 }
 
 //清楚销毁定时器资源
